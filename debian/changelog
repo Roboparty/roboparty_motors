@@ -1,3 +1,10 @@
+roboparty-motors (2.3.0-1) stable; urgency=medium
+
+  * Build packages natively on Ubuntu 24.04 for amd64 and arm64.
+  * Target the system Python 3.12 ABI on Ubuntu 24.04.
+
+ -- RoboParty <2321901849@qq.com>  Thu, 10 Sep 2026 18:47:16 +0800
+
 roboparty-motors (2.2.1-1) stable; urgency=medium
 
   * Bump package version.

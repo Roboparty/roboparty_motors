@@ -9,10 +9,9 @@ jobs:
       matrix:
         include:
           - arch: amd64
-            os: ubuntu-22.04
+            os: ubuntu-24.04
           - arch: arm64
-            # os: ubuntu-22.04-arm
-            os: [self-hosted, rk3588]
+            os: [self-hosted, Linux, ARM64, "24.04"]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout code

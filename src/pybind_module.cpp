@@ -7,6 +7,7 @@
 #include "drivers/dm/dm_motor_driver.hpp"
 #include "drivers/evo/evo_motor_driver.hpp"
 #include "drivers/lro/lro_motor_driver.hpp"
+#include "drivers/rp/rp_motor_driver.hpp"
 #include "drivers/xyn/xyn_motor_driver.hpp"
 
 namespace py = pybind11;

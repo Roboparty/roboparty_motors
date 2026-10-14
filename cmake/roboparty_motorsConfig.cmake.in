@@ -18,6 +18,7 @@ if(NOT TARGET roboparty_motors::roboparty_motors)
         roboparty_motors::dm_motors
         roboparty_motors::evo_motors
         roboparty_motors::lro_motors
+        roboparty_motors::rp_motors
         roboparty_motors::xyn_motors
         roboparty_motors::motors_can
         roboparty_motors::motors_canfd

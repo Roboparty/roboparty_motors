@@ -30,7 +30,6 @@ class MotorDriver {
         SPD = 3,
     };
 
-    static constexpr double judgment_accuracy_threshold = 1e-2;
     static const int normal_sleep_time = 5;
     static const int setup_sleep_time = 500;
 
@@ -80,9 +79,10 @@ class MotorDriver {
      * This function sets the current motor position to zero.
      * It establishes a new reference point for position measurement.
      *
-     * @return True if setting motor position to zero is successful; otherwise, false.
+     * The command is sent without waiting for a feedback confirmation. The new zero
+     * takes effect after the motor is power-cycled.
      */
-    virtual bool set_motor_zero() = 0;
+    virtual void set_motor_zero() = 0;
 
     /**
      * @brief Permanently burns current in-memory motor configuration parameters to Flash.

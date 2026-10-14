@@ -129,22 +129,10 @@ bool LroMotorDriver::write_motor_flash() {
     return true;
 }
 
-bool LroMotorDriver::set_motor_zero() {
-    // send set zero command
+void LroMotorDriver::set_motor_zero() {
     LroMotorDriver::set_motor_zero_lro();
     Timer::sleep_for(setup_sleep_time);
-    LroMotorDriver::refresh_motor_status();
-    Timer::sleep_for(setup_sleep_time);
-    logger_->info("motor_id: {0}\tposition: {1}", motor_id_, get_motor_pos());
     LroMotorDriver::unlock_motor();
-    if (get_motor_pos() > judgment_accuracy_threshold || get_motor_pos() < -judgment_accuracy_threshold) {
-        logger_->warn("set zero error");
-        return false;
-    } else {
-        logger_->info("set zero success");
-        return true;
-    }
-    // disable motor
 }
 
 void LroMotorDriver::canfd_rx_cbk(const canfd_frame& rx_frame) {
@@ -190,9 +178,6 @@ void LroMotorDriver::get_motor_param(uint8_t param_cmd) {
         tx_frame.data[1] = param_cmd; //// Query (mode 0x07) — request param/status
 
         canfd_->transmit(tx_frame);
-    }
-    {
-        response_count_++;
     }
 }
 
@@ -474,9 +459,6 @@ void LroMotorDriver::set_motor_zero_lro() {
         tx_frame.data[3] = LRO_CMD_SET_ZERO;
         
         canfd_->transmit(tx_frame);
-    }
-    {
-        response_count_++;
     }
 }
 

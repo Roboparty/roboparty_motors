@@ -174,22 +174,10 @@ bool DmMotorDriver::write_motor_flash() {
     return true; 
 }
 
-bool DmMotorDriver::set_motor_zero() {
-    // send set zero command
+void DmMotorDriver::set_motor_zero() {
     DmMotorDriver::set_motor_zero_dm();
     Timer::sleep_for(setup_sleep_time);
-    DmMotorDriver::refresh_motor_status();
-    Timer::sleep_for(setup_sleep_time);  // wait for motor to set zero
-    logger_->info("motor_id: {0}\tposition: {1}\t", motor_id_, get_motor_pos());
     DmMotorDriver::unlock_motor();
-    if (get_motor_pos() > judgment_accuracy_threshold || get_motor_pos() < -judgment_accuracy_threshold) {
-        logger_->warn("set zero error");
-        return false;
-    } else {
-        logger_->info("set zero success");
-        return true;
-    }
-    // disable motor
 }
 
 void DmMotorDriver::can_rx_cbk(const can_frame& rx_frame) {
@@ -262,9 +250,6 @@ void DmMotorDriver::get_motor_param(uint8_t param_cmd) {
         tx_frame.data[7] = 0xFF;
 
         can_->transmit(tx_frame);
-    }
-    {
-        response_count_++;
     }
 }
 
@@ -455,9 +440,6 @@ void DmMotorDriver::set_motor_zero_dm() {
         tx_frame.data[7] = 0xFE;
 
         can_->transmit(tx_frame);
-    }
-    {
-        response_count_++;
     }
 }
 

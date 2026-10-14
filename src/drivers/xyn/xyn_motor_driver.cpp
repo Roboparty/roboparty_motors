@@ -170,21 +170,9 @@ bool XynMotorDriver::write_motor_flash() {
     return true;
 }
 
-bool XynMotorDriver::set_motor_zero() {
-    // send set zero command
+void XynMotorDriver::set_motor_zero() {
     XynMotorDriver::set_motor_zero_xyn();
     Timer::sleep_for(setup_sleep_time);
-    XynMotorDriver::refresh_motor_status();
-    Timer::sleep_for(setup_sleep_time);
-    logger_->info("motor_id: {0}\tposition: {1}", motor_id_, get_motor_pos());
-    if (std::abs(get_motor_pos()) > judgment_accuracy_threshold) {
-        logger_->warn("set zero error");
-        return false;
-    } else {
-        logger_->info("set zero success");
-        return true;
-    }
-    // disable motor
 }
 
 void XynMotorDriver::canfd_rx_cbk(const canfd_frame& rx_frame) {
@@ -419,9 +407,6 @@ void XynMotorDriver::set_motor_control_mode(uint8_t motor_control_mode) {
         tx_frame.data[0] = 0x00;
 
         canfd_->transmit(tx_frame);
-        {
-            response_count_++;
-        }
         Timer::sleep_for(normal_sleep_time);
 
         // set new mode
@@ -431,9 +416,6 @@ void XynMotorDriver::set_motor_control_mode(uint8_t motor_control_mode) {
         tx_frame.data[0] = xyn_mode;
 
         canfd_->transmit(tx_frame);
-        {
-            response_count_++;
-        }
         Timer::sleep_for(normal_sleep_time);
 
         // restart motor
@@ -443,9 +425,6 @@ void XynMotorDriver::set_motor_control_mode(uint8_t motor_control_mode) {
         tx_frame.data[0] = 0x01;
 
         canfd_->transmit(tx_frame);
-        {
-            response_count_++;
-        }
         Timer::sleep_for(normal_sleep_time);
     }
 
@@ -482,9 +461,6 @@ void XynMotorDriver::set_motor_zero_xyn() {
 
             canfd_->transmit(tx_frame);
         }
-        {
-            response_count_++;
-        }
         Timer::sleep_for(normal_sleep_time);
         {
             canfd_frame tx_frame{};
@@ -493,9 +469,6 @@ void XynMotorDriver::set_motor_zero_xyn() {
             tx_frame.flags = CANFD_BRS;
 
             canfd_->transmit(tx_frame);
-        }
-        {
-            response_count_++;
         }
     }
 }

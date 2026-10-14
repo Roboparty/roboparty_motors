@@ -172,22 +172,10 @@ bool EvoMotorDriver::write_motor_flash() {
     return true;
 }
 
-bool EvoMotorDriver::set_motor_zero() {
-    // send set zero command
+void EvoMotorDriver::set_motor_zero() {
     EvoMotorDriver::set_motor_zero_evo();
     Timer::sleep_for(setup_sleep_time);
-    EvoMotorDriver::refresh_motor_status();
-    Timer::sleep_for(setup_sleep_time);  // wait for motor to set zero
-    logger_->info("motor_id: {0}\tposition: {1}\t", motor_id_, get_motor_pos());
     EvoMotorDriver::unlock_motor();
-    if (get_motor_pos() > judgment_accuracy_threshold || get_motor_pos() < -judgment_accuracy_threshold) {
-        logger_->warn("set zero error");
-        return false;
-    } else {
-        logger_->info("set zero success");
-        return true;
-    }
-    // disable motor
 }
 
 void EvoMotorDriver::can_rx_cbk(const can_frame& rx_frame) {
@@ -276,9 +264,6 @@ void EvoMotorDriver::get_motor_param(uint8_t param_cmd) {
         tx_frame.data[7] = EVO_CMD_END_FLASH;
         
         can_->transmit(tx_frame);
-    }
-    {
-        response_count_++;
     }
 }
 
@@ -535,9 +520,6 @@ void EvoMotorDriver::set_motor_zero_evo() {
         tx_frame.data[7] = EVO_CMD_SET_ZERO;
 
         can_->transmit(tx_frame);
-    }
-    {
-        response_count_++;
     }
 }
 

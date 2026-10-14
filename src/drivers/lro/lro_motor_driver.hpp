@@ -130,7 +130,7 @@ class LroMotorDriver : public MotorDriver {
     virtual void unlock_motor() override;
     virtual uint8_t init_motor() override;
     virtual void deinit_motor() override;
-    virtual bool set_motor_zero() override;
+    virtual void set_motor_zero() override;
     virtual bool write_motor_flash() override;
     virtual void get_motor_param(uint8_t param_cmd) override;
 

@@ -13,7 +13,7 @@
 // #include "protocol/ethercat_iso.hpp"
 #include "utils.hpp"
 
-// LeadRobot error codes (from type-1 feedback, 5-bit error field)
+// LRO error codes (from type-1 feedback, 5-bit error field)
 enum LROError : uint8_t {
     LRO_NO_ERROR        = 0x00,
     LRO_MOTOR_OVERHEAT  = 0x01,
@@ -32,7 +32,7 @@ enum LRO_Motor_Model {
     LRO_Num_Of_Motor
 };
 
-// LeadRobot motor mode byte (upper 3 bits of Byte0 in control frames)
+// LRO motor mode byte (upper 3 bits of Byte0 in control frames)
 enum LROMotorMode : uint8_t {
     LRO_MODE_MIT     = 0x00,  // MIT impedance control
     LRO_MODE_POS     = 0x01,  // Servo position control
@@ -42,7 +42,7 @@ enum LROMotorMode : uint8_t {
     LRO_MODE_QUERY   = 0x07,  // Parameter query
 };
 
-// LeadRobot 0x7FF setup command codes (Byte3)
+// LRO 0x7FF setup command codes (Byte3)
 enum LROSetupCmd : uint8_t {
     LRO_CMD_SET_ZERO   = 0x03,  // Set zero position
     LRO_CMD_SET_ID     = 0x04,  // Change motor ID
@@ -54,7 +54,7 @@ enum LROSetupCmd : uint8_t {
     LRO_CMD_QUERY_ID   = 0x82,  // Query motor ID
 };
 
-// LeadRobot feedback message type (upper 3 bits of Byte0 in response)
+// LRO feedback message type (upper 3 bits of Byte0 in response)
 enum LROFeedbackType : uint8_t {
     LRO_FB_TYPE1 = 0x01,  // pos(u16) + spd(u12) + iq(u12) + temp(u8) + mos_temp(u8) + dcvol(u16) + dccur(u16)
     LRO_FB_TYPE2 = 0x02,  // pos(float) + cur(i16) + temp(u8)
@@ -63,7 +63,7 @@ enum LROFeedbackType : uint8_t {
     LRO_FB_TYPE5 = 0x05,  // query result: code(u8) + data(variable)
 };
 
-// LeadRobot config codes (used with mode 0x06)
+// LRO config codes (used with mode 0x06)
 enum LROConfigCode : uint8_t {
     LRO_CFG_ACCEL       = 0x01,  // Set acceleration (rad/s^2)
     LRO_CFG_DECEL       = 0x02,  // Set deceleration (rad/s^2)
@@ -84,7 +84,7 @@ enum LROConfigCode : uint8_t {
 
 // Query codes for Mode 0x07. Used to retrieve real-time internal information from the motor.
 enum LROQueryCode : uint8_t {
-    LRO_QRY_MANUFACTURER = 0x00,  // Manufacturer info (LeadRobot=3)
+    LRO_QRY_MANUFACTURER = 0x00,  // Manufacturer info (LRO=3)
     LRO_QRY_POS          = 0x01,  // Current position (degrees, float)
     LRO_QRY_SPD          = 0x02,  // Current speed (RPM, float)
     LRO_QRY_CUR          = 0x03,  // Current phase current (float)

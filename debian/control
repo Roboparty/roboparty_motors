@@ -10,5 +10,5 @@ Package: roboparty-motors
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, roboparty-base (>= 1.0.0)
 Description: RoboParty motor driver
- Motor driver with DM, EVO, Xynova and LeadRobot motor support (CAN protocol).
+ Motor driver with DM, EVO, LRO, RP and XYN motor support (CAN protocol).
  Provides static libraries, headers and Python bindings.

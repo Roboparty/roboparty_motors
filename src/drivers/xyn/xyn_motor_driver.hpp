@@ -12,7 +12,7 @@
 // #include "protocol/ethercat_iso.hpp"
 #include "utils.hpp"
 
-// Xynova error codes (reported via 0x00F)
+// XYN error codes (reported via 0x00F)
 enum XYNError {
     XYN_NO_ERROR            = 0x00,
     XYN_OVER_VOLTAGE        = 0x01,
@@ -35,7 +35,7 @@ enum XYN_Motor_Model {
     XYN_Num_Of_Model
 };
 
-// Xynova Motor modes (written to 0x002)
+// XYN motor modes (written to 0x002)
 enum XYNMotorMode : uint8_t {
     XYN_MODE_POSITION = 0x01,
     XYN_MODE_SPEED    = 0x02,
@@ -43,7 +43,7 @@ enum XYNMotorMode : uint8_t {
     XYN_MODE_MIT      = 0x08,
 };
 
-// Xynova CAN-FD Message IDs
+// XYN CAN-FD Message IDs
 enum XYNMsgId : uint16_t {
     XYN_MSG_ENABLE       = 0x001,  // Enable/Disable motor
     XYN_MSG_MODE         = 0x002,  // Set control mode

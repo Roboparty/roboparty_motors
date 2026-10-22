@@ -11,7 +11,7 @@
 #include "socket_canfd.hpp"
 
 #include <cerrno>
-#include <cctype>
+#include <cstdlib>
 
 #include <spdlog/sinks/stdout_color_sinks.h>
 
@@ -86,30 +86,30 @@ void MotorsSocketCANFD::open(const std::string& interface) {
         throw std::runtime_error("Failed to set socket to non-blocking");
     }
 
+    int cpu_id = 6;
+    if (const char* value = std::getenv("ROBOT_CAN_CPU"); value && *value) {
+        char* end = nullptr;
+        const long parsed = std::strtol(value, &end, 10);
+        if (*value >= '0' && *value <= '9' && *end == '\0' && parsed < CPU_SETSIZE) {
+            cpu_id = static_cast<int>(parsed);
+        } else {
+            logger_->warn("Invalid ROBOT_CAN_CPU='{}'; using CPU{}", value, cpu_id);
+        }
+    }
     receiving_ = true;
-    receiver_thread_ = std::thread([this]() {
-        pthread_setname_np(pthread_self(), "canfd_rx");
+    receiver_thread_ = std::thread([this, cpu_id]() {
         struct sched_param sp{}; sp.sched_priority = 48;
         if (pthread_setschedparam(pthread_self(), SCHED_FIFO, &sp) != 0) {
             logger_->error("Failed to set realtime priority for CANFD RX thread");
         }
 
-        int total_cores = std::thread::hardware_concurrency();
-        if (total_cores == 0) total_cores = 4; // Fallback
-        const int little_cores = total_cores > 1 ? total_cores / 2 : 1;
-        int cpu_id = 0;
-
-        char last_char = interface_.back();
-        if (isdigit(last_char)) {
-            int port_num = last_char - '0';
-            cpu_id = port_num % little_cores;
-        }
         cpu_set_t cpuset;
         CPU_ZERO(&cpuset);
         CPU_SET(cpu_id, &cpuset);
-        if (pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset) != 0) {
+        if (pthread_setaffinity_np(pthread_self(), sizeof(cpuset), &cpuset) != 0) {
             logger_->error("Failed to bind CANFD RX thread to Core {}", cpu_id);
         }
+        pthread_setname_np(pthread_self(), "motor_canfd_rx");
 
         fd_set descriptors;
         int maxfd = sockfd_;
@@ -159,29 +159,19 @@ void MotorsSocketCANFD::open(const std::string& interface) {
         }
     });
 
-    sender_thread_ = std::thread([this]() {
-        pthread_setname_np(pthread_self(), "canfd_tx");
+    sender_thread_ = std::thread([this, cpu_id]() {
         struct sched_param sp{}; sp.sched_priority = 48;
         if (pthread_setschedparam(pthread_self(), SCHED_FIFO, &sp) != 0) {
             logger_->error("Failed to set realtime priority for CANFD TX thread");
         }
 
-        int total_cores = std::thread::hardware_concurrency();
-        if (total_cores == 0) total_cores = 4; // Fallback
-        const int little_cores = total_cores > 1 ? total_cores / 2 : 1;
-        int cpu_id = 0;
-        
-        char last_char = interface_.back();
-        if (isdigit(last_char)) {
-            int port_num = last_char - '0';
-            cpu_id = port_num % little_cores;
-        }
         cpu_set_t cpuset;
         CPU_ZERO(&cpuset);
         CPU_SET(cpu_id, &cpuset);
-        if (pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset) != 0) {
+        if (pthread_setaffinity_np(pthread_self(), sizeof(cpuset), &cpuset) != 0) {
             logger_->error("Failed to bind CANFD TX thread to Core {}", cpu_id);
         }
+        pthread_setname_np(pthread_self(), "motor_canfd_tx");
 
         canfd_frame tx_frame;
         int count = 0;

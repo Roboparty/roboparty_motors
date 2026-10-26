@@ -102,18 +102,20 @@ uint8_t LroMotorDriver::init_motor() {
     LroMotorDriver::refresh_motor_status();
     Timer::sleep_for(normal_sleep_time);
     switch (error_id_) {
-        case LROError::LRO_MOTOR_OVERHEAT:
-            return LROError::LRO_MOTOR_OVERHEAT;
+        case LROError::LRO_MOTOR_MOS_OVERHEAT:
+            return LROError::LRO_MOTOR_MOS_OVERHEAT;
         case LROError::LRO_OVER_CURRENT:
             return LROError::LRO_OVER_CURRENT;
         case LROError::LRO_UNDER_VOLTAGE:
             return LROError::LRO_UNDER_VOLTAGE;
         case LROError::LRO_ENCODER_ERROR:
             return LROError::LRO_ENCODER_ERROR;
-        case LROError::LRO_BRAKE_OVERVOLT:
-            return LROError::LRO_BRAKE_OVERVOLT;
-        case LROError::LRO_DRV_ERROR:
-            return LROError::LRO_DRV_ERROR;
+        case LROError::LRO_PHASE_LOSS_OR_CURRENT_OFFSET:
+            return LROError::LRO_PHASE_LOSS_OR_CURRENT_OFFSET;
+        case LROError::LRO_OVER_VOLTAGE:
+            return LROError::LRO_OVER_VOLTAGE;
+        case LROError::LRO_OTHER_ERROR:
+            return LROError::LRO_OTHER_ERROR;
         default:
             return error_id_;
     }
@@ -144,7 +146,8 @@ void LroMotorDriver::canfd_rx_cbk(const canfd_frame& rx_frame) {
     uint16_t spd_int = 0;
     uint16_t t_int = 0;
     uint8_t fb_type = (rx_frame.data[0] >> 5) & 0x07;
-    error_id_ = rx_frame.data[0] & 0x1F;
+    // Ignore bit3 (reserved) and bit4 (enable status in newer firmware).
+    error_id_ = rx_frame.data[0] & 0x07;
     if (error_id_ > 0) {
         if (logger_) {
             logger_->error("can_interface: {0}\tmotor_id: {1}\terror_id: 0x{2:x}", can_interface_, motor_id_, static_cast<uint32_t>(error_id_));

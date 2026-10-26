@@ -13,15 +13,16 @@
 // #include "protocol/ethercat_iso.hpp"
 #include "utils.hpp"
 
-// LRO error codes (from type-1 feedback, 5-bit error field)
+// LRO V1.03 error codes (Byte0 bits 0-2). Query code 36 returns the detailed alarm.
 enum LROError : uint8_t {
-    LRO_NO_ERROR        = 0x00,
-    LRO_MOTOR_OVERHEAT  = 0x01,
-    LRO_OVER_CURRENT    = 0x02,
-    LRO_UNDER_VOLTAGE   = 0x03,
-    LRO_ENCODER_ERROR   = 0x04,
-    LRO_BRAKE_OVERVOLT  = 0x06,
-    LRO_DRV_ERROR       = 0x07,
+    LRO_NO_ERROR                     = 0x00,
+    LRO_MOTOR_MOS_OVERHEAT            = 0x01,  // A.861 / A.7A0
+    LRO_OVER_CURRENT                 = 0x02,  // A.100
+    LRO_UNDER_VOLTAGE                = 0x03,  // A.410
+    LRO_ENCODER_ERROR                = 0x04,  // A.C90 / A.C91 / A.830 / A.840 / A.CF1 / A.8A2
+    LRO_PHASE_LOSS_OR_CURRENT_OFFSET = 0x05,  // UVW phase loss or excessive current sensing offset: A.B31 / A.B32
+    LRO_OVER_VOLTAGE                 = 0x06,  // A.400
+    LRO_OTHER_ERROR                  = 0x07,
 };
 
 enum LRO_Motor_Model {

@@ -13,6 +13,7 @@
 #include "rp_motor_driver.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <stdexcept>
 
 namespace {
@@ -204,10 +205,8 @@ void RPMotorDriver::canfd_rx_cbk(const canfd_frame& rx_frame) {
     const int32_t pos_int = read_be_i32(&rx_frame.data[5]);
     const int32_t spd_int = read_be_i32(&rx_frame.data[9]);
     const int16_t current_int = read_be_i16(&rx_frame.data[13]);
-    motor_pos_ = 
-        range_map(pos_int, static_cast<int32_t>(-limit_param_.PosMax * 10000.0f), static_cast<int32_t>(limit_param_.PosMax * 10000.0f), -limit_param_.PosMax, limit_param_.PosMax) + static_cast<float>(motor_zero_offset_);
-    motor_spd_ = 
-        range_map(spd_int, static_cast<int32_t>(-limit_param_.SpdMax * 10000.0f), static_cast<int32_t>(limit_param_.SpdMax * 10000.0f), -limit_param_.SpdMax, limit_param_.SpdMax);
+    motor_pos_ = static_cast<float>(pos_int) * 0.0001f + static_cast<float>(motor_zero_offset_);
+    motor_spd_ = static_cast<float>(spd_int) * 0.0001f;
     motor_current_ = static_cast<float>(current_int) * 0.01f;
     motor_temperature_ = static_cast<float>(read_be_i16(&rx_frame.data[15])) * 0.01f;
     mos_temperature_ = static_cast<float>(read_be_i16(&rx_frame.data[17])) * 0.01f;
@@ -225,6 +224,12 @@ void RPMotorDriver::motor_mit_cmd(float* f_p, float* f_v, float* f_kp, float* f_
     tx_frame.can_id = RP_MULTI_MIT;  // 0x400
     tx_frame.len = 64;
     tx_frame.flags = CANFD_BRS;
+
+    // Unconfigured motor slots must encode zero commands, not negative full scale.
+    constexpr uint8_t neutral_mit[8] = {0x80, 0x00, 0x80, 0x08, 0x00, 0x00, 0x00, 0x00};
+    for (uint8_t slot = 0; slot < kRPBatchMotorCount; ++slot) {
+        std::copy(std::begin(neutral_mit), std::end(neutral_mit), &tx_frame.data[slot * 8]);
+    }
 
     std::shared_lock<std::shared_mutex> lock(bus_registry_mutex_);
     auto it = bus_registry_.find(can_interface_);
@@ -247,9 +252,10 @@ void RPMotorDriver::motor_mit_cmd(float* f_p, float* f_v, float* f_kp, float* f_
 
             kp = range_map(kp_f, 0.0f, motor->limit_param_.OKpMax, uint16_t(0), uint16_t(0x0FFF));
             kd = range_map(kd_f, 0.0f, motor->limit_param_.OKdMax, uint16_t(0), uint16_t(0x0FFF));
-            p  = range_map(p_f, -motor->limit_param_.PosMax, motor->limit_param_.PosMax,uint16_t(0), uint16_t(0xFFFF));
-            v  = range_map(v_f, -motor->limit_param_.SpdMax, motor->limit_param_.SpdMax, uint16_t(0), uint16_t(0x0FFF));
-            t  = range_map(t_f, -motor->limit_param_.TauMax, motor->limit_param_.TauMax, uint16_t(0), uint16_t(0x0FFF));
+            // Round to the nearest code so zero maps to 32768 / 2048 / 2048.
+            p = static_cast<uint16_t>(std::lround(range_map(p_f, -motor->limit_param_.PosMax, motor->limit_param_.PosMax, 0.0, 65535.0)));
+            v = static_cast<uint16_t>(std::lround(range_map(v_f, -motor->limit_param_.SpdMax, motor->limit_param_.SpdMax, 0.0, 4095.0)));
+            t = static_cast<uint16_t>(std::lround(range_map(t_f, -motor->limit_param_.TauMax, motor->limit_param_.TauMax, 0.0, 4095.0)));
 
             uint64_t packed = 0;
             packed |= (static_cast<uint64_t>(p) << 48);   // pos: 16 bits

@@ -5,10 +5,10 @@
 #include "lro_motor_driver.hpp"
 
 LRO_Limit_Param lro_limit_param[LRO_Num_Of_Motor] = {
-    {12.5, 21.0, 36.0, 500.0, 50.0},  // LRO_PJ2_55_5550
-    {12.5, 21.89, 35.3, 500.0, 50.0},  // LRO_PJ3_60_6562
-    {12.5, 16.13, 56.5, 500.0, 50.0},  // LRO_PJ3_75_8462
-    {12.5, 14.24, 141.7, 500.0, 50.0}   // LRO_PJ3_97_10062
+    {12.5, 20.0, 30.0, 18.0, 500.0, 50.0},  // LRO_PJ2_55_5550
+    {12.5, 40.0, 40.0, 32.0, 500.0, 50.0},  // LRO_PJ3_60_6562
+    {12.5, 35.0, 65.0, 35.0, 500.0, 50.0},  // LRO_PJ3_75_8462
+    {12.5, 16.0, 165.0, 90.0, 500.0, 50.0}   // LRO_PJ3_97_10062
 };
 
 LroMotorDriver::LroMotorDriver(uint16_t motor_id, const std::string& interface_type, const std::string& can_interface,
@@ -138,14 +138,15 @@ void LroMotorDriver::set_motor_zero() {
 }
 
 void LroMotorDriver::canfd_rx_cbk(const canfd_frame& rx_frame) {
+    if (rx_frame.len != 8 && rx_frame.len != 12) return;
+    const uint8_t fb_type = (rx_frame.data[0] >> 5) & 0x07;
+    if (fb_type != LRO_FB_TYPE1) return;
     {
         response_count_ = 0;
     }
-    if (rx_frame.len < 0x08) return;
     uint16_t pos_int = 0;
     uint16_t spd_int = 0;
     uint16_t t_int = 0;
-    uint8_t fb_type = (rx_frame.data[0] >> 5) & 0x07;
     // Ignore bit3 (reserved) and bit4 (enable status in newer firmware).
     error_id_ = rx_frame.data[0] & 0x07;
     if (error_id_ > 0) {
@@ -161,9 +162,18 @@ void LroMotorDriver::canfd_rx_cbk(const canfd_frame& rx_frame) {
     motor_spd_ = 
         range_map(spd_int, uint16_t(0), bitmax<uint16_t>(12), -limit_param_.SpdMax, limit_param_.SpdMax);
     motor_current_ = 
-        range_map(t_int, uint16_t(0), bitmax<uint16_t>(12), -limit_param_.TauMax, limit_param_.TauMax);
+        range_map(t_int, uint16_t(0), bitmax<uint16_t>(12), -limit_param_.CurMax, limit_param_.CurMax);
     mos_temperature_ = static_cast<float>(static_cast<int>(rx_frame.data[7]) - 25);
     motor_temperature_ = static_cast<float>(static_cast<int>(rx_frame.data[6]) - 25); // Temperature: value - 25 = actual temperature
+    if (rx_frame.len == 12) {
+        const uint16_t voltage_raw = (static_cast<uint16_t>(rx_frame.data[8]) << 8) | rx_frame.data[9];
+        const uint16_t current_raw = (static_cast<uint16_t>(rx_frame.data[10]) << 8) | rx_frame.data[11];
+        dc_bus_voltage_ = range_map(voltage_raw, uint16_t(0), bitmax<uint16_t>(16), 0.0f, 100.0f);
+        dc_bus_current_ = range_map(current_raw, uint16_t(0), bitmax<uint16_t>(16), -100.0f, 100.0f);
+    } else {
+        dc_bus_voltage_ = std::numeric_limits<float>::quiet_NaN();
+        dc_bus_current_ = std::numeric_limits<float>::quiet_NaN();
+    }
 }
 
 // void LroMotorDriver::ethercat_rx_cbk(const ethercat_frame& rx_frame) {}
@@ -192,7 +202,7 @@ void LroMotorDriver::motor_pos_cmd(float pos, float spd, bool ignore_limit) {
     float pos_deg = (pos - static_cast<float>(motor_zero_offset_)) * 180.0f / static_cast<float>(M_PI);
     float spd_rpm = std::abs(spd) * 60.0f / (2.0f * static_cast<float>(M_PI));
     uint16_t spd_val = static_cast<uint16_t>(limit(spd_rpm * 10.0f, 0.0f, 32767.0f));
-    uint16_t cur_limit = 4095;
+    const uint16_t cur_limit = static_cast<uint16_t>(limit(limit_param_.CurMax * 10.0f, 0.0f, 4095.0f));
     uint8_t ack = 1;
     union32_t rv_type_convert;
     rv_type_convert.f = pos_deg;
@@ -228,7 +238,7 @@ void LroMotorDriver::motor_spd_cmd(float spd) {
         return;
     }
     float spd_rpm = spd * 60.0f / (2.0f * static_cast<float>(M_PI));
-    uint16_t cur_limit = 65535;
+    const uint16_t cur_limit = static_cast<uint16_t>(limit(limit_param_.CurMax * 10.0f, 0.0f, 65535.0f));
     uint8_t ack = 1;
     union32_t rv_type_convert;
     rv_type_convert.f = spd_rpm;

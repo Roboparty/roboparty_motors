@@ -5,6 +5,7 @@
 #pragma once
 
 #include <atomic>
+#include <limits>
 #include <shared_mutex>
 #include <string>
 
@@ -116,7 +117,7 @@ typedef struct {
     float PosMax;   // Maximum position (rad), default 12.5
     float SpdMax;   // Maximum velocity (rad/s), default 45
     float TauMax;   // Maximum torque (Nm), default 40
-    // float CurMax;   // Maximum current (A), default 70
+    float CurMax;   // Iq feedback encoding limit (A), independent of torque
     float OKpMax;    // Default 500
     float OKdMax;    // Default 5
 } LRO_Limit_Param;
@@ -148,11 +149,15 @@ class LroMotorDriver : public MotorDriver {
     virtual void refresh_motor_status() override;
     virtual void clear_motor_error() override;
 
+    // NaN until a 12-byte type-1 frame arrives, or when feedback is 8 bytes.
+    float get_dc_bus_voltage() const { return dc_bus_voltage_.load(); }  // V
+    float get_dc_bus_current() const { return dc_bus_current_.load(); }  // A
+
    private:
     uint8_t motor_index_{0};
 
-    // std::atomic<float> dc_bus_voltage_{0.f};
-    // std::atomic<float> dc_bus_current_{0.f};
+    std::atomic<float> dc_bus_voltage_{std::numeric_limits<float>::quiet_NaN()};
+    std::atomic<float> dc_bus_current_{std::numeric_limits<float>::quiet_NaN()};
     std::atomic<int> response_count_{0};
     LRO_Motor_Model motor_model_;
     LRO_Limit_Param limit_param_;

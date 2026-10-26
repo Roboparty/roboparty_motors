@@ -23,18 +23,29 @@
 // #include "protocol/ethercat_iso.hpp"
 #include "utils.hpp"
 
-// Error code values are not defined here
+// Motor fault codes; command acknowledgement errors use a separate code table.
 enum RPError {
-    RP_NO_ERROR             = 0x00,
-    RP_OVER_VOLTAGE         = 0x01,
-    RP_OVER_CURRENT         = 0x02,
-    RP_MOTOR_OVER_TEMP      = 0x03,
-    RP_BOARD_OVER_TEMP      = 0x04,
-    RP_UNDER_VOLTAGE        = 0x05,
-    RP_ENCODER_FAULT        = 0x06,
-    RP_COMM_FAULT           = 0x07,
-    RP_WARN_MOTOR_OVER_TEMP = 0x08,
-    RP_WARN_BOARD_OVER_TEMP = 0x09,
+    RP_NO_ERROR               = 0,
+    RP_SOFTWARE_VERSION_ERROR = 1,
+    RP_BOARD_FAULT            = 3,
+    RP_MOTOR_SHORT_CIRCUIT    = 4,
+    RP_OVER_CURRENT           = 5,
+    RP_OVERLOAD               = 6,
+    RP_MOTOR_OPEN_CIRCUIT     = 7,
+    RP_OVER_VOLTAGE            = 8,
+    RP_UNDER_VOLTAGE           = 9,
+    RP_PHASE_LOSS             = 10,
+    RP_MOTOR_OVER_TEMP        = 11,
+    RP_BOARD_OVER_TEMP        = 12,
+    RP_ETHERCAT_COMM_FAULT    = 13,
+    RP_EEPROM_FAULT           = 16,
+    RP_HALL_FAULT             = 17,
+    RP_TORQUE_COMMAND_FAULT   = 18,
+    RP_ENCODER_FAULT          = 19,
+    RP_STO_FAULT              = 20,
+    RP_RS485_COMM_FAULT       = 21,
+    RP_REDUCER_DEVIATION      = 22,
+    RP_STATOR_SLIP            = 23,
 };
 
 

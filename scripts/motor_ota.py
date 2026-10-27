@@ -5,13 +5,13 @@
 
 单台设备（最简）::
 
-    from firmware_flasher import update_firmware
+    from motor_ota import update_firmware
 
     update_firmware("app.bin", can_id=0x1009, interface="can_rdk")
 
 多台设备循环烧录（套接字只打开一次，推荐）::
 
-    from firmware_flasher import LinuxFlasher, FlashError
+    from motor_ota import LinuxFlasher, FlashError
 
     with LinuxFlasher(interface="can_rdk") as flasher:
         for can_id in (0x1009, 0x100B):
@@ -518,10 +518,13 @@ class SocketcanAdapter:
             self._sock.bind((self._ifname,))
             self._sock.setblocking(False)
         except OSError as e:
+            if self._sock is not None:
+                self._sock.close()
+                self._sock = None
             raise AdapterError(
                 f'socketcan 打开失败: {e}。请确认接口已配置并启用: '
-                'sudo ip link set can0 type can bitrate 1000000 '
-                'dbitrate 5000000 fd on && sudo ip link set can0 up') from e
+                f'sudo ip link set {self._ifname} type can bitrate 1000000 '
+                f'dbitrate 5000000 fd on && sudo ip link set {self._ifname} up') from e
 
     def close(self):
         if self._sock is not None:
@@ -536,19 +539,27 @@ class SocketcanAdapter:
         self.close()
 
     def send_frame(self, can_id, data):
-        padded = bytes(data)[:DLC].ljust(DLC, b'\x00')
+        if not 0 <= can_id <= 0x1FFFFFFE:
+            raise AdapterError(f'扩展 CAN ID 超出范围或无应答 ID 空间: 0x{can_id:X}')
+        if self._sock is None:
+            raise AdapterError('socketcan 尚未打开')
+        if len(data) > DLC:
+            raise TransportError(f'单帧数据超过 {DLC} 字节')
+        padded = bytes(data).ljust(DLC, b'\x00')
         frame = _CANFD_FRAME.pack(can_id | CAN_EFF_FLAG, DLC, CANFD_BRS, padded)
         try:
             self._sock.send(frame)
         except OSError as e:
-            raise AdapterError(f'socketcan 发送失败: {e}') from e
+            raise TransportError(f'socketcan 发送失败: {e}') from e
 
     def recv_frame(self):
         """非阻塞收一帧；无数据返回 None。"""
         try:
             frame = self._sock.recv(_CANFD_FRAME.size)
-        except (BlockingIOError, OSError):
+        except BlockingIOError:
             return None
+        except OSError as e:
+            raise TransportError(f'socketcan 接收失败: {e}') from e
         if len(frame) == _CAN_FRAME.size:
             can_id, dlc, data = _CAN_FRAME.unpack(frame)
             return can_id, bytes(data[:dlc if dlc else 8])
@@ -609,13 +620,23 @@ def update_firmware(firmware_path, can_id, interface='can0',
         flasher.flash(firmware_path, can_id, on_progress)
 
 
+def _parse_can_id(value):
+    try:
+        can_id = int(value, 0)
+    except ValueError as e:
+        raise argparse.ArgumentTypeError(f'无效的 CAN ID: {value}') from e
+    if not 0 <= can_id <= 0x1FFFFFFE:
+        raise argparse.ArgumentTypeError('CAN ID 必须在 0x0 到 0x1FFFFFFE 之间')
+    return can_id
+
+
 # ---- 命令行入口 ----
 def _parse_args(argv):
     parser = argparse.ArgumentParser(
         prog='firmware_flasher.py',
         description='固件升级工具（Linux 板载 CANFD）：向设备烧录固件 BIN')
     parser.add_argument('firmware', help='固件 BIN 文件路径')
-    parser.add_argument('--can-id', required=True, type=lambda s: int(s, 0),
+    parser.add_argument('--can-id', required=True, type=_parse_can_id,
                         help='目标设备 CAN ID（支持 0x 十六进制，如 0x1009）')
     parser.add_argument('--interface', default='can0',
                         help='CAN 接口名（默认 can0）')

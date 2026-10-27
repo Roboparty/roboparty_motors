@@ -104,9 +104,8 @@ install(TARGETS motors_py
   RUNTIME DESTINATION ${PYTHON_INSTALL_DIR}
 )
 
-install(DIRECTORY scripts/motor_ota/
-  DESTINATION ${PYTHON_INSTALL_DIR}/roboparty_motor_ota
-  FILES_MATCHING PATTERN "*.py"
+install(FILES scripts/motor_ota.py
+  DESTINATION ${PYTHON_INSTALL_DIR}
 )
 
 if(ament_cmake_FOUND)

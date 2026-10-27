@@ -30,9 +30,9 @@
 
 命令行直接运行::
 
-    python firmware_flasher.py app.bin --can-id 0x100X --interface can_rdk
-    --can-id 0x100X 改为固件ID
-    app.bin 改为需要刷新的固件版本
+    python3 -m motor_ota --firmware app.bin --can-id 2 --interface can_rdk
+    --can-id 指定电机 CAN ID，支持十进制和 0x 十六进制
+    app.bin 改为需要烧录的固件路径
 
 板端环境要求
 ============
@@ -633,9 +633,8 @@ def _parse_can_id(value):
 # ---- 命令行入口 ----
 def _parse_args(argv):
     parser = argparse.ArgumentParser(
-        prog='firmware_flasher.py',
         description='固件升级工具（Linux 板载 CANFD）：向设备烧录固件 BIN')
-    parser.add_argument('firmware', help='固件 BIN 文件路径')
+    parser.add_argument('--firmware', required=True, help='固件 BIN 文件路径')
     parser.add_argument('--can-id', required=True, type=_parse_can_id,
                         help='目标设备 CAN ID（支持 0x 十六进制，如 0x1009）')
     parser.add_argument('--interface', default='can0',

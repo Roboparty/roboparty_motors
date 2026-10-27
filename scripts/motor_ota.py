@@ -30,8 +30,10 @@
 
 命令行直接运行::
 
-    python3 -m motor_ota --firmware app.bin --can-id 2 --interface can_rdk
-    --can-id 指定电机 CAN ID，支持十进制和 0x 十六进制
+    python3 -m motor_ota --firmware app.bin --can-id 0x1003 --interface can_rdk
+    --can-id 指定 OTA 请求 ID，而非普通控制协议的 Motor ID
+    OTA 请求 ID = 0x1000 + 2 * Motor ID - 1，应答 ID = 请求 ID + 1
+    例如 Motor ID 1 对应 0x1001，Motor ID 2 对应 0x1003
     app.bin 改为需要烧录的固件路径
 
 板端环境要求
@@ -636,7 +638,7 @@ def _parse_args(argv):
         description='固件升级工具（Linux 板载 CANFD）：向设备烧录固件 BIN')
     parser.add_argument('--firmware', required=True, help='固件 BIN 文件路径')
     parser.add_argument('--can-id', required=True, type=_parse_can_id,
-                        help='目标设备 CAN ID（支持 0x 十六进制，如 0x1009）')
+                        help='OTA 请求 ID（0x1000 + 2 * Motor ID - 1，如电机 2 为 0x1003）')
     parser.add_argument('--interface', default='can0',
                         help='CAN 接口名（默认 can0）')
     return parser.parse_args(argv)

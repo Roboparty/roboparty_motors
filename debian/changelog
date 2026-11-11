@@ -1,3 +1,12 @@
+roboparty-motors (2.3.4-1) stable; urgency=medium
+
+  * LRO: add a classic CAN 2.0 transport (interface_type "can") alongside
+    CAN-FD, using 8-byte per-motor frames. The 0x8080 batch MIT command
+    remains CAN-FD only; classic CAN callers use the per-motor API.
+  * Build: link lro_motors against motors_can.
+
+ -- RoboParty <2321901849@qq.com>  Wed, 11 Nov 2026 13:00:00 +0800
+
 roboparty-motors (2.3.3-1) stable; urgency=medium
 
   * Update the LRO V5.0.0.109 firmware to the 202610281537 release.

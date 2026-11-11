@@ -12,4 +12,4 @@ target_include_directories(lro_motors
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
   $<INSTALL_INTERFACE:include>
 )
-target_link_libraries(lro_motors PUBLIC ${PUBLIC_DEPENDENCIES} motors_canfd)
+target_link_libraries(lro_motors PUBLIC ${PUBLIC_DEPENDENCIES} motors_can motors_canfd)

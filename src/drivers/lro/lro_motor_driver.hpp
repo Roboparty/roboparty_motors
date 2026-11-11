@@ -10,6 +10,7 @@
 #include <string>
 
 #include "motor_driver.hpp"
+#include "protocol/can_iso.hpp"
 #include "protocol/canfd_iso.hpp"
 // #include "protocol/ethercat_iso.hpp"
 #include "utils.hpp"
@@ -168,8 +169,10 @@ class LroMotorDriver : public MotorDriver {
     void write_register_lro(uint8_t index, int32_t value);
     void save_register_lro();
 
+    virtual void can_rx_cbk(const can_frame& rx_frame);
     virtual void canfd_rx_cbk(const canfd_frame& rx_frame);
     // virtual void ethercat_rx_cbk(const ethercat_frame& rx_frame);
+    std::shared_ptr<MotorsCAN> can_;
     std::shared_ptr<MotorsCANFD> canfd_;
     // std::shared_ptr<MotorsEthercat> ethercat_;
 

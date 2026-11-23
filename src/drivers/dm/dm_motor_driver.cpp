@@ -348,6 +348,10 @@ void DmMotorDriver::motor_mit_cmd(float f_p, float f_v, float f_kp, float f_kd, 
         set_motor_control_mode(MIT);
         return;
     }
+    
+    if (std::isnan(f_p) || std::isnan(f_v) || std::isnan(f_kp) || std::isnan(f_kd) || std::isnan(f_t)) {
+        return;
+    }
     uint16_t p, v, kp, kd, t;
 
     f_p -= motor_zero_offset_;
